@@ -42,6 +42,10 @@ enum {
 	REQ_KVM_TO_S_VISOR_UPDATE_TOP
 };
 
+
+kvm_smc_req_t *get_smc_req_region(unsigned int core_id);
+void *get_gp_reg_region(unsigned int core_id);
+
 #define __KVM_HAVE_ARCH_INTC_INITIALIZED
 
 #define KVM_USER_MEM_SLOTS 512

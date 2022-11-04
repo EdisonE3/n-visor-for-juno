@@ -44,6 +44,29 @@
 __asm__(".arch_extension	virt");
 #endif
 
+#define S_VISOR_MAX_SUPPORTED_PHYSICAL_CORE_NUM 4
+#define S_VISOR_MAX_SIZE_PER_CORE (2048 + 64)
+__attribute__((aligned(PAGE_SIZE))) uint64_t shared_register_pages[S_VISOR_MAX_SUPPORTED_PHYSICAL_CORE_NUM * S_VISOR_MAX_SIZE_PER_CORE];
+
+// 自动获取当前VM用于储存通用寄存器的shared region
+inline void *get_s_visor_shared_buf(void)
+{
+	return (shared_register_pages + smp_processor_id() * S_VISOR_MAX_SIZE_PER_CORE);
+}
+
+// 根据传入的core id, 获取储存通用寄存器的shared region, 长度为[32 * register_size]
+inline void *get_gp_reg_region(unsigned int core_id) {
+	uint64_t *ptr = shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
+	return (void *)ptr;
+}
+
+// 根据传入的core id, 获取储存smc request的shared region
+inline kvm_smc_req_t *get_smc_req_region(unsigned int core_id) {
+	uint64_t *ptr = shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
+	/* First 32 entries are for guest gp_regs */
+	return (kvm_smc_req_t *)(ptr + 32);
+}
+
 DEFINE_PER_CPU(kvm_host_data_t, kvm_host_data);
 static DEFINE_PER_CPU(unsigned long, kvm_arm_hyp_stack_page);
 
