@@ -1680,6 +1680,22 @@ void kvm_arch_irq_bypass_start(struct irq_bypass_consumer *cons)
 	kvm_arm_resume_guest(irqfd->kvm);
 }
 
+static inline void register_s_visor_shared_memory(void) {
+	asm volatile("mov x1, %0\n"::"r"(virt_to_phys(shared_register_pages)): "x1");
+	local_irq_disable();
+	asm volatile("smc #0x10\n");
+	local_irq_enable();
+}
+
+void flush_s_visor_shadow_page_tables() {
+	kvm_smc_req_t* kvm_smc_flush_req = get_smc_req_region(smp_processor_id());
+	kvm_smc_flush_req->req_type = REQ_KVM_TO_S_VISOR_FLUSH_IPA;
+	local_irq_disable();
+	asm volatile("smc #0x18\n");
+	local_irq_enable();
+}
+EXPORT_SYMBOL(flush_s_visor_shadow_page_tables);
+
 /**
  * Initialize Hyp-mode and memory mappings on all CPUs.
  */
@@ -1731,6 +1747,8 @@ int kvm_arch_init(void *opaque)
 		kvm_info("VHE mode initialized successfully\n");
 	else
 		kvm_info("Hyp mode initialized successfully\n");
+
+	register_s_visor_shared_memory();
 
 	return 0;
 
