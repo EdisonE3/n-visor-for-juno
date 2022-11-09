@@ -51,9 +51,9 @@ __attribute__((aligned(PAGE_SIZE))) uint64_t shared_register_pages[S_VISOR_MAX_S
 //---------------------el1------------------------
 
 // 获取shared memory的起始地址
-inline void *get_shared_memory_base_address(void)
+inline void *get_shared_memory_base_address(unsigned int core_id)
 {
-	return shared_register_pages;
+	return shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
 }
 
 // 根据传入的core id, 获取储存smc request的shared region
