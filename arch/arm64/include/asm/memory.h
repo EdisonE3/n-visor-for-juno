@@ -22,12 +22,13 @@
  * IO_SPACE_LIMIT acts as a mask for the low bits of I/O addresses.
  */
 #define PCI_IO_SIZE		SZ_16M
+#define V_STRUCT_PAGE_MAX_SHIFT 7
 
 /*
  * VMEMMAP_SIZE - allows the whole linear region to be covered by
  *                a struct page array
  */
-#define VMEMMAP_SIZE (UL(1) << (VA_BITS - PAGE_SHIFT - 1 + STRUCT_PAGE_MAX_SHIFT))
+#define VMEMMAP_SIZE (UL(1) << (VA_BITS - PAGE_SHIFT - 1 + V_STRUCT_PAGE_MAX_SHIFT))
 
 /*
  * PAGE_OFFSET - the virtual address of the start of the linear map (top

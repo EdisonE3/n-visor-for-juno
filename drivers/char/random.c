@@ -2118,7 +2118,6 @@ const struct file_operations urandom_fops = {
 	.llseek = noop_llseek,
 };
 
-
 SYSCALL_DEFINE3(getrandom, char __user *, buf, size_t, count,
 		unsigned int, flags)
 {
