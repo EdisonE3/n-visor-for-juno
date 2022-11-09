@@ -48,23 +48,62 @@ __asm__(".arch_extension	virt");
 #define S_VISOR_MAX_SIZE_PER_CORE (2048 + 64)
 __attribute__((aligned(PAGE_SIZE))) uint64_t shared_register_pages[S_VISOR_MAX_SUPPORTED_PHYSICAL_CORE_NUM * S_VISOR_MAX_SIZE_PER_CORE];
 
-// 自动获取当前VM用于储存通用寄存器的shared region
-inline void *get_s_visor_shared_buf(void)
-{
-	return (shared_register_pages + smp_processor_id() * S_VISOR_MAX_SIZE_PER_CORE);
-}
+//---------------------el1------------------------
 
-// 根据传入的core id, 获取储存通用寄存器的shared region, 长度为[32 * register_size]
-inline void *get_gp_reg_region(unsigned int core_id) {
-	uint64_t *ptr = shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
-	return (void *)ptr;
+// 获取shared memory的起始地址
+inline void *get_shared_memory_base_address(void)
+{
+	return shared_register_pages;
 }
 
 // 根据传入的core id, 获取储存smc request的shared region
-inline kvm_smc_req_t *get_smc_req_region(unsigned int core_id) {
-	uint64_t *ptr = shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
+inline kvm_smc_req_t *get_smc_req_region(unsigned int core_id)
+{
+	uint64_t *ptr =
+		shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
 	/* First 32 entries are for guest gp_regs */
 	return (kvm_smc_req_t *)(ptr + 32);
+}
+
+// 根据传入的core id, 获取储存通用寄存器的shared region, 长度为[32 * register_size]
+inline void *get_gp_reg_region(unsigned int core_id)
+{
+	uint64_t *ptr =
+		shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;
+	return (void *)ptr;
+}
+
+//---------------------el2------------------------
+
+unsigned int __hyp_text get_core_id(void)
+{
+	unsigned int core_id;
+	asm volatile("mrs	x0, mpidr_el1\n\t"
+	"tst	x0,#0x1000000\n\t"
+	"lsl	x3,x0,#8\n\t"
+	"csel	x3,x3,x0,eq\n\t"
+	"ubfx	x0,x3,#8,#8\n\t"
+	"ubfx   x1,x3,#16,#8\n\t"
+	"add    %0,x0,x1,lsl #2" : "=r"(core_id));
+	return core_id;
+}
+
+// 自动获取当前VM用于储存通用寄存器的shared region
+void *get_shared_buf_with_rmm(void)
+{
+	uint64_t core_id_offset;
+	uint64_t stored_base;
+	uint64_t *ptr; 
+	void *shared_buf;
+
+	core_id_offset = get_core_id() * S_VISOR_MAX_SIZE_PER_CORE;
+	asm volatile("mov %0,  x14" : "=r" (stored_base));
+	ptr = (uint64_t *)stored_base; 
+
+	shared_buf = ptr + core_id_offset;
+
+	shared_buf = kern_hyp_va(shared_buf);
+	return shared_buf;
 }
 
 DEFINE_PER_CPU(kvm_host_data_t, kvm_host_data);
