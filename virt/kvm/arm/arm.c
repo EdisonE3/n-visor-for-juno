@@ -97,6 +97,7 @@ void *get_shared_buf_with_rmm(void)
 	void *shared_buf;
 
 	core_id_offset = get_core_id() * S_VISOR_MAX_SIZE_PER_CORE;
+	// 默认把el1:base address写在host:x14中
 	asm volatile("mov %0,  x14" : "=r" (stored_base));
 	ptr = (uint64_t *)stored_base; 
 
