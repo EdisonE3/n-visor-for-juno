@@ -56,6 +56,10 @@
 #include <linux/uaccess.h>
 #include <asm/pgtable.h>
 
+#include <asm/kvm_asm.h>
+#include <asm/kvm_hyp.h>
+#include <asm/kvm_mmu.h>
+
 #include "coalesced_mmio.h"
 #include "async_pf.h"
 #include "vfio.h"
@@ -922,7 +926,7 @@ uint64_t __hyp_text __read_ttbr0_el2(void){
 
 extern void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu);
 /* trap to secure world and initialize corresponding vm in realm world */
-void* __hyp_text boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
+void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
 	// request shared memory
 	unsigned int core_id;
 	kvm_smc_req_t *smc_req;
@@ -932,7 +936,7 @@ void* __hyp_text boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
 	// initialize information of smc_req
 	smc_req->sec_vm_id = sec_vm_id;
 	smc_req->req_type = REQ_KVM_TO_S_VISOR_BOOT;
-	uint64_t qemu_s1ptp = kvm_call_hyp(__read_ttbr0_el2);
+	uint64_t qemu_s1ptp = kvm_call_hyp_ret(__read_ttbr0_el2);
 	smc_req->boot.qemu_s1ptp = qemu_s1ptp;
 	smc_req->boot.nr_vcpu = nr_vcpu;
 
@@ -1000,30 +1004,33 @@ int __kvm_set_memory_region(struct kvm *kvm,
 	if (mem->guest_phys_addr == vm_kernel_gpa){
 		printk("boot rmm realm vm: invoke smc enter: start\n");
 
-		// TODO: 这两个结构体需要做一些修改，因为现在的结构体是根据kvm的结构体来设计的
-		struct task_struct *vm_task;
-		struct sec_vm_info *svi;
+		//--------------------JUNO_TODO：暂时用不上sec_vm_info，先注释-------------------
+		// JUNO_TODO: 这两个结构体需要做一些修改，因为现在的结构体是根据kvm的结构体来设计的
+		// struct task_struct *vm_task;
+		// struct sec_vm_info *svi;
 
 		// 获取当前vm对应的task，确保当前VM task还没有初始化sec_vm_info
-		vm_task = current->group_leader;
-		BUG_ON(vm_task->sec_vm_info);
+		// vm_task = current->group_leader;
+		// BUG_ON(vm_task->sec_vm_info);
 
 		// 申请一块内存用来储存realm vm info
-		svi = kzalloc(sizeof(*svi), GFP_KERNEL);
-		BUG_ON(!svi);
+		// svi = kzalloc(sizeof(*svi), GFP_KERNEL);
+		// BUG_ON(!svi);
 
 		// initialize realm vm info
-		svi->tgid = vm_task->tgid;
-		svi->sec_hva_start = mem->userspace_addr;
-		svi->sec_hva_size = mem->memory_size;
-		atomic_set(&svi->is_exiting, 0);
-		svi->sec_pool_type = DEFAULT_POOL;
-		svi->active_cache = NULL;
-		INIT_LIST_HEAD(&svi->inactive_cache_list);
-		mutex_init(&svi->vm_lock);
+		// svi->tgid = vm_task->tgid;
+		// svi->sec_hva_start = mem->userspace_addr;
+		// svi->sec_hva_size = mem->memory_size;
+		// atomic_set(&svi->is_exiting, 0);
+		// svi->sec_pool_type = DEFAULT_POOL;
+		// svi->active_cache = NULL;
+		// INIT_LIST_HEAD(&svi->inactive_cache_list);
+		// mutex_init(&svi->vm_lock);
 
 		// update vm_task and kvm property
-		vm_task->sec_vm_info = svi;
+		// vm_task->sec_vm_info = svi;
+		//-------------------------JUNO_TODO-----------------------------
+
 		kvm->arch.sec_vm_id = atomic_inc_return(&sec_vm_cnt) + 1;
 
 		boot_rmm_realm_vm(kvm->arch.sec_vm_id, kvm->created_vcpus);
