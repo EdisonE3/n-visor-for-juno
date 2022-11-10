@@ -907,6 +907,44 @@ static struct kvm_memslots *install_new_memslots(struct kvm *kvm,
 	return old_memslots;
 }
 
+u64 vm_kernel_gpa = 0x40000000;
+EXPORT_SYMBOL(vm_kernel_gpa);
+
+static atomic_t sec_vm_cnt = ATOMIC_INIT(0);
+
+/* read value of ttbr0_el2 */
+uint64_t __hyp_text __read_ttbr0_el2(void){
+	uint64_t qemu_s1ptp;		
+	asm volatile("mrs %0, ttbr0_el2\n\t" : "=r"(qemu_s1ptp));
+	
+	return qemu_s1ptp;
+}
+
+extern void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu);
+/* trap to secure world and initialize corresponding vm in realm world */
+void* __hyp_text boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
+	// request shared memory
+	unsigned int core_id;
+	kvm_smc_req_t *smc_req;
+	core_id = smp_processor_id();
+	smc_req = get_smc_req_region(core_id);
+
+	// initialize information of smc_req
+	smc_req->sec_vm_id = sec_vm_id;
+	smc_req->req_type = REQ_KVM_TO_S_VISOR_BOOT;
+	uint64_t qemu_s1ptp = kvm_call_hyp(__read_ttbr0_el2);
+	smc_req->boot.qemu_s1ptp = qemu_s1ptp;
+	smc_req->boot.nr_vcpu = nr_vcpu;
+
+	local_irq_disable();
+	// asm volatile("smc 0x18\n\t");
+	printk("boot_rmm_realm_vm: core_id: %u\n", core_id);
+	printk("boot_rmm_realm_vm: smc_req: %llx\n", smc_req);
+	printk("boot_rmm_realm_vm: sec_vm_id: %u\n", sec_vm_id);
+	printk("boot_rmm_realm_vm: successfully\n");
+	local_irq_enable();
+}
+
 /*
  * Allocate some memory and give it an address in the guest physical address
  * space.
@@ -957,6 +995,41 @@ int __kvm_set_memory_region(struct kvm *kvm,
 
 	if (npages > KVM_MEM_MAX_NR_PAGES)
 		goto out;
+	
+	//如果传入的是要加载的kernel，那么需要特殊处理，将kernenl的信息传递给RMM
+	if (mem->guest_phys_addr == vm_kernel_gpa){
+		printk("boot rmm realm vm: invoke smc enter: start\n");
+
+		// TODO: 这两个结构体需要做一些修改，因为现在的结构体是根据kvm的结构体来设计的
+		struct task_struct *vm_task;
+		struct sec_vm_info *svi;
+
+		// 获取当前vm对应的task，确保当前VM task还没有初始化sec_vm_info
+		vm_task = current->group_leader;
+		BUG_ON(vm_task->sec_vm_info);
+
+		// 申请一块内存用来储存realm vm info
+		svi = kzalloc(sizeof(*svi), GFP_KERNEL);
+		BUG_ON(!svi);
+
+		// initialize realm vm info
+		svi->tgid = vm_task->tgid;
+		svi->sec_hva_start = mem->userspace_addr;
+		svi->sec_hva_size = mem->memory_size;
+		atomic_set(&svi->is_exiting, 0);
+		svi->sec_pool_type = DEFAULT_POOL;
+		svi->active_cache = NULL;
+		INIT_LIST_HEAD(&svi->inactive_cache_list);
+		mutex_init(&svi->vm_lock);
+
+		// update vm_task and kvm property
+		vm_task->sec_vm_info = svi;
+		kvm->arch.sec_vm_id = atomic_inc_return(&sec_vm_cnt) + 1;
+
+		boot_rmm_realm_vm(kvm->arch.sec_vm_id, kvm->created_vcpus);
+
+		printk("boot rmm realm vm: invoke smc enter: end\n");
+	}
 
 	new = old = *slot;
 
