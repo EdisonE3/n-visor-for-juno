@@ -843,11 +843,11 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			// get shared memory
 			void* gp_regs;
 			void* base_address;
-			void* gp_regs = get_gp_reg_region(smp_processor_id());
-			void* base_address = get_shared_memory_base_address();
+			gp_regs = get_gp_reg_region(smp_processor_id());
+			base_address = get_shared_memory_base_address(0);
 
 			// go to el2
-			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu);
+			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu, gp_regs, base_address);
 
 			kvm_info("KVM RUN NVHE: start\n");
 		}

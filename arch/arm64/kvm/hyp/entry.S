@@ -223,7 +223,7 @@ ENTRY(__guest_exit)
 	// Retrieve the guest regs x0-x1 from the stack
 	ldp	x2, x3, [sp], #16	// x0, x1
 	stp	x0, x1, [sp, #-16]!	// return code, vcpu
-	bl 	get_s_visor_shared_buf_by_base // change x0, x1, x2 | x0:shared buf
+	bl 	get_shared_buf_with_rmm // change x0, x1, x2 | x0:shared buf
 	ldp     x2, x1,   [sp], #16     // return_code, vcpu
 
 	//----------------------------only for rmm---------------------------
@@ -264,19 +264,21 @@ ENTRY(__guest_exit)
 	mov x0, x2
 	//----------------------------only for rmm---------------------------
 
+	/** 先注释掉
 	// Store the guest regs x0-x1 and x4-x18
-	@ stp	x2, x3,   [x1, #CPU_XREG_OFFSET(0)]
-	@ stp	x4, x5,   [x1, #CPU_XREG_OFFSET(4)]
-	@ stp	x6, x7,   [x1, #CPU_XREG_OFFSET(6)]
-	@ stp	x8, x9,   [x1, #CPU_XREG_OFFSET(8)]
-	@ stp	x10, x11, [x1, #CPU_XREG_OFFSET(10)]
-	@ stp	x12, x13, [x1, #CPU_XREG_OFFSET(12)]
-	@ stp	x14, x15, [x1, #CPU_XREG_OFFSET(14)]
-	@ stp	x16, x17, [x1, #CPU_XREG_OFFSET(16)]
-	@ str	x18,      [x1, #CPU_XREG_OFFSET(18)]
+	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(0)]
+	stp	x4, x5,   [x1, #CPU_XREG_OFFSET(4)]
+	stp	x6, x7,   [x1, #CPU_XREG_OFFSET(6)]
+	stp	x8, x9,   [x1, #CPU_XREG_OFFSET(8)]
+	stp	x10, x11, [x1, #CPU_XREG_OFFSET(10)]
+	stp	x12, x13, [x1, #CPU_XREG_OFFSET(12)]
+	stp	x14, x15, [x1, #CPU_XREG_OFFSET(14)]
+	stp	x16, x17, [x1, #CPU_XREG_OFFSET(16)]
+	str	x18,      [x1, #CPU_XREG_OFFSET(18)]
 
 	// Store the guest regs x19-x29, lr
-	@ save_callee_saved_regs x1
+	save_callee_saved_regs x1
+	*/
 
 	get_host_ctxt	x2, x3
 

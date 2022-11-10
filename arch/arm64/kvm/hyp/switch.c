@@ -590,7 +590,7 @@ int kvm_vcpu_run_vhe(struct kvm_vcpu *vcpu)
 NOKPROBE_SYMBOL(kvm_vcpu_run_vhe);
 
 /* Switch to the guest for legacy non-VHE systems */
-int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu, struct kvm_vcpu *vcpu, void *gp_regs, void *share_buf_base_address)
+int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu, void *gp_regs, void *share_buf_base_address)
 {
 	struct kvm_cpu_context *host_ctxt;
 	struct kvm_cpu_context *guest_ctxt;
