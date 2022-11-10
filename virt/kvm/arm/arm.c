@@ -1724,7 +1724,7 @@ static inline void register_s_visor_shared_memory(void) {
 	asm volatile("mov x1, %0\n"::"r"(virt_to_phys(shared_register_pages)): "x1");
 	local_irq_disable();
 	// asm volatile("smc #0x10\n");
-	kvm_info("Registered s_visor shared memory va: %lld, pa: %lld successfully\n", 
+	kvm_info("Registered s_visor shared memory va: %llx, pa: %llx successfully\n", 
 	shared_register_pages, virt_to_phys(shared_register_pages));
 	local_irq_enable();
 }
