@@ -144,6 +144,9 @@ struct kvm_arch {
 
 	/* Mandated version of PSCI */
 	u32 psci_version;
+
+	/* secure vm id  */
+	u32 sec_vm_id;	
 };
 
 #define KVM_NR_MEM_OBJS     40
