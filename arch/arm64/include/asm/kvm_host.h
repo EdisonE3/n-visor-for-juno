@@ -77,6 +77,7 @@ typedef struct {
 } kvm_smc_req_t;
 
 void flush_s_visor_shadow_page_tables(void);
+void trap_s_visor_enter_guest(u32 sec_vm_id, u32 vcpu_id);
 
 //-------------------shared memory-------------------start
 // el1

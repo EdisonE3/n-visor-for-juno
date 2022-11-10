@@ -590,7 +590,7 @@ int kvm_vcpu_run_vhe(struct kvm_vcpu *vcpu)
 NOKPROBE_SYMBOL(kvm_vcpu_run_vhe);
 
 /* Switch to the guest for legacy non-VHE systems */
-int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu)
+int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu, struct kvm_vcpu *vcpu, void *gp_regs, void *share_buf_base_address)
 {
 	struct kvm_cpu_context *host_ctxt;
 	struct kvm_cpu_context *guest_ctxt;
@@ -609,6 +609,7 @@ int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu)
 	}
 
 	vcpu = kern_hyp_va(vcpu);
+	gp_regs = kern_hyp_va(gp_regs);
 
 	host_ctxt = kern_hyp_va(vcpu->arch.host_cpu_context);
 	host_ctxt->__hyp_running_vcpu = vcpu;
@@ -636,7 +637,8 @@ int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu)
 
 	do {
 		/* Jump in the fire! */
-		exit_code = __guest_enter(vcpu, host_ctxt);
+		asm volatile("mov x14,  %0" : : "r" (share_buf_base_address));
+		exit_code = __guest_enter_s_visor_fastpath(vcpu, host_ctxt, gp_regs);
 
 		/* And we're baaack! */
 	} while (fixup_guest_exit(vcpu, &exit_code));

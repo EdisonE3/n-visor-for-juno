@@ -161,6 +161,13 @@ int kvm_arch_check_processor_compat(void)
 	return 0;
 }
 
+void trap_s_visor_enter_guest(u32 sec_vm_id, u32 vcpu_id)
+{
+	kvm_smc_req_t* smc_req = get_smc_req_region(smp_processor_id());
+	smc_req->sec_vm_id = sec_vm_id;
+	smc_req->vcpu_id = vcpu_id;
+	smc_req->req_type = REQ_KVM_TO_S_VISOR_GENERAL;
+}
 
 /**
  * kvm_arch_init_vm - initializes a VM data structure
@@ -828,7 +835,21 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			ret = kvm_vcpu_run_vhe(vcpu);
 			kvm_arm_vhe_guest_exit();
 		} else {
+			kvm_info("KVM RUN NVHE: start\n");
+			
+			// set smc parameters
+			trap_s_visor_enter_guest(vcpu->kvm->arch.sec_vm_id, vcpu->vcpu_id);
+
+			// get shared memory
+			void* gp_regs;
+			void* base_address;
+			void* gp_regs = get_gp_reg_region(smp_processor_id());
+			void* base_address = get_shared_memory_base_address();
+
+			// go to el2
 			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu);
+
+			kvm_info("KVM RUN NVHE: start\n");
 		}
 
 		vcpu->mode = OUTSIDE_GUEST_MODE;

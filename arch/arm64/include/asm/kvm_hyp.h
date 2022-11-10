@@ -103,6 +103,8 @@ void activate_traps_vhe_load(struct kvm_vcpu *vcpu);
 void deactivate_traps_vhe_put(void);
 
 u64 __guest_enter(struct kvm_vcpu *vcpu, struct kvm_cpu_context *host_ctxt);
+u64 __guest_enter_s_visor_fastpath(struct kvm_vcpu *vcpu,
+        struct kvm_cpu_context *host_ctxt, void* shared_page);
 void __noreturn __hyp_do_panic(unsigned long, ...);
 
 /*
