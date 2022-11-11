@@ -634,6 +634,15 @@ struct wake_q_node {
 	struct wake_q_node *next;
 };
 
+struct sec_vm_info {
+	pid_t                   tgid;
+	unsigned long           sec_hva_start;
+	unsigned long           sec_hva_size;
+	atomic_t                is_exiting;
+	
+	struct mutex            vm_lock;
+};
+
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
@@ -1274,6 +1283,7 @@ struct task_struct {
 	unsigned long			prev_lowest_stack;
 #endif
 
+	struct sec_vm_info  *sec_vm_info;
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
