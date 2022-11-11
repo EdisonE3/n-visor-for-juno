@@ -1002,7 +1002,7 @@ int __kvm_set_memory_region(struct kvm *kvm,
 	
 	//如果传入的是要加载的kernel，那么需要特殊处理，将kernenl的信息传递给RMM
 	if (mem->guest_phys_addr == vm_kernel_gpa){
-		printk("boot rmm realm vm: invoke smc enter: start\n");
+		kvm_info("boot rmm realm vm: invoke smc enter: start\n");
 
 		//--------------------JUNO_TODO：暂时用不上sec_vm_info，先注释-------------------
 		// JUNO_TODO: 这两个结构体需要做一些修改，因为现在的结构体是根据kvm的结构体来设计的
@@ -1035,7 +1035,7 @@ int __kvm_set_memory_region(struct kvm *kvm,
 
 		boot_rmm_realm_vm(kvm->arch.sec_vm_id, kvm->created_vcpus);
 
-		printk("boot rmm realm vm: invoke smc enter: end\n");
+		kvm_info("boot rmm realm vm: invoke smc enter: end\n");
 	}
 
 	new = old = *slot;

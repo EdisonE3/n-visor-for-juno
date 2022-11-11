@@ -220,8 +220,9 @@ ENTRY(__guest_exit)
 	// Store the guest regs x2 and x3
 	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(2)]
 
-	// Restore the host regs x18
+	// Restore the host regs
 	ldp	x2, x3, [sp], #16
+	/* 
 	get_host_ctxt	x2, x3
 	restore_share_base_address_register x2
 
@@ -281,8 +282,22 @@ ENTRY(__guest_exit)
 	str 	x3,   [x1, #CPU_XREG_OFFSET(30)]
 
 	mov x0, x2
+	*/
 	//----------------------------only for rmm---------------------------
 
+	// Store the guest regs x0-x1 and x4-x18 to shared memory
+	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(0)]
+	stp	x4, x5,   [x1, #CPU_XREG_OFFSET(4)]
+	stp	x6, x7,   [x1, #CPU_XREG_OFFSET(6)]
+	stp	x8, x9,   [x1, #CPU_XREG_OFFSET(8)]
+	stp	x10, x11, [x1, #CPU_XREG_OFFSET(10)]
+	stp	x12, x13, [x1, #CPU_XREG_OFFSET(12)]
+	stp	x14, x15, [x1, #CPU_XREG_OFFSET(14)]
+	stp	x16, x17, [x1, #CPU_XREG_OFFSET(16)]
+	str	x18,      [x1, #CPU_XREG_OFFSET(18)]
+
+	// Store the guest regs x19-x29, lr to shared memory
+	save_callee_saved_regs x1
 
 	get_host_ctxt	x2, x3
 

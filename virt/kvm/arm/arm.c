@@ -835,7 +835,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			ret = kvm_vcpu_run_vhe(vcpu);
 			kvm_arm_vhe_guest_exit();
 		} else {
-			kvm_info("KVM RUN NVHE: start\n");
+			// kvm_info("KVM RUN NVHE: start\n");
 			
 			// set smc parameters
 			trap_s_visor_enter_guest(vcpu->kvm->arch.sec_vm_id, vcpu->vcpu_id);
@@ -849,7 +849,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			// go to el2
 			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu, gp_regs, base_address);
 
-			kvm_info("KVM RUN NVHE: end\n");
+			// kvm_info("KVM RUN NVHE: end\n");
 		}
 
 		vcpu->mode = OUTSIDE_GUEST_MODE;
@@ -1742,6 +1742,17 @@ void kvm_arch_irq_bypass_start(struct irq_bypass_consumer *cons)
 }
 
 static inline void register_s_visor_shared_memory(void) {
+	int ret;
+	ret = create_hyp_mappings(shared_register_pages,
+			    shared_register_pages +
+				    S_VISOR_MAX_SUPPORTED_PHYSICAL_CORE_NUM *
+					    S_VISOR_MAX_SIZE_PER_CORE,
+			    PAGE_HYP);
+	if (!ret)
+	{
+		kvm_info("create memory map with el2 successfully\n");
+	}
+	
 	asm volatile("mov x1, %0\n"::"r"(virt_to_phys(shared_register_pages)): "x1");
 	local_irq_disable();
 	// asm volatile("smc #0x10\n");
