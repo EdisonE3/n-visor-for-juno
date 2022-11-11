@@ -224,6 +224,17 @@ vm_fault_t kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
 	return VM_FAULT_SIGBUS;
 }
 
+static void destroy_s_visor_secure_vm(u32 sec_vm_id)
+{
+	kvm_smc_req_t *smc_req;
+	smc_req = get_smc_req_region(smp_processor_id());
+	smc_req->sec_vm_id = sec_vm_id;
+	smc_req->req_type = REQ_KVM_TO_S_VISOR_SHUTDOWN;
+	local_irq_disable();
+	// asm volatile("smc 0x18\n\t");
+	kvm_info("REQ_KVM_TO_S_VISOR_SHUTDOWN: %d\n", smc_req->sec_vm_id);
+	local_irq_enable();
+}
 
 /**
  * kvm_arch_destroy_vm - destroy the VM data structure
@@ -232,6 +243,11 @@ vm_fault_t kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
 void kvm_arch_destroy_vm(struct kvm *kvm)
 {
 	int i;
+
+	if (kvm->arch.sec_vm_id) {
+		kvm_info("Destroying VM: s-vm[%d]\n", kvm->arch.sec_vm_id);
+		destroy_s_visor_secure_vm(kvm->arch.sec_vm_id);
+	}
 
 	kvm_vgic_destroy(kvm);
 
