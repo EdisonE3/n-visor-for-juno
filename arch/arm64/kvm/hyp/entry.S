@@ -199,7 +199,12 @@ alternative_else_nop_endif
 	// Restore guest reg x18
 	ldr	x18,      [x18, #CPU_XREG_OFFSET(18)]
 
-	smc #0x1
+	// TODO: 暂时不用smc
+	// smc #0x1
+	
+	// Do not touch any register after this!
+	eret
+	sb
 ENDPROC(__guest_enter_s_visor_fastpath)
 
 ENTRY(__guest_exit)
@@ -227,6 +232,20 @@ ENTRY(__guest_exit)
 	ldp     x2, x1,   [sp], #16     // return_code, vcpu
 
 	//----------------------------only for rmm---------------------------
+	// Store the guest regs x0-x1 and x4-x18 to shared memory
+	stp	x2, x3,   [x0, #CPU_XREG_OFFSET(0)]
+	stp	x4, x5,   [x0, #CPU_XREG_OFFSET(4)]
+	stp	x6, x7,   [x0, #CPU_XREG_OFFSET(6)]
+	stp	x8, x9,   [x0, #CPU_XREG_OFFSET(8)]
+	stp	x10, x11, [x0, #CPU_XREG_OFFSET(10)]
+	stp	x12, x13, [x0, #CPU_XREG_OFFSET(12)]
+	stp	x14, x15, [x0, #CPU_XREG_OFFSET(14)]
+	stp	x16, x17, [x0, #CPU_XREG_OFFSET(16)]
+	str	x18,      [x0, #CPU_XREG_OFFSET(18)]
+
+	// Store the guest regs x19-x29, lr to shared memory
+	save_callee_saved_regs x0
+
 	// Retrive guest regs x0-x30
 	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(0)]
 	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(0)]
@@ -264,21 +283,6 @@ ENTRY(__guest_exit)
 	mov x0, x2
 	//----------------------------only for rmm---------------------------
 
-	/** 先注释掉
-	// Store the guest regs x0-x1 and x4-x18
-	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(0)]
-	stp	x4, x5,   [x1, #CPU_XREG_OFFSET(4)]
-	stp	x6, x7,   [x1, #CPU_XREG_OFFSET(6)]
-	stp	x8, x9,   [x1, #CPU_XREG_OFFSET(8)]
-	stp	x10, x11, [x1, #CPU_XREG_OFFSET(10)]
-	stp	x12, x13, [x1, #CPU_XREG_OFFSET(12)]
-	stp	x14, x15, [x1, #CPU_XREG_OFFSET(14)]
-	stp	x16, x17, [x1, #CPU_XREG_OFFSET(16)]
-	str	x18,      [x1, #CPU_XREG_OFFSET(18)]
-
-	// Store the guest regs x19-x29, lr
-	save_callee_saved_regs x1
-	*/
 
 	get_host_ctxt	x2, x3
 

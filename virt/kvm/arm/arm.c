@@ -849,7 +849,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			// go to el2
 			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu, gp_regs, base_address);
 
-			kvm_info("KVM RUN NVHE: start\n");
+			kvm_info("KVM RUN NVHE: end\n");
 		}
 
 		vcpu->mode = OUTSIDE_GUEST_MODE;
