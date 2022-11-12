@@ -637,8 +637,9 @@ int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu, void *gp_regs, void *s
 
 	do {
 		exit_code = __guest_enter_s_visor_fastpath(vcpu, host_ctxt, gp_regs);
-		// TODO: enter 和 exit 用的是同一套gp_regs吗?
-		__retrieve_shared_buf_to_vcpu(vcpu, gp_regs);
+		share_buf_base_address = get_shared_buf_with_rmm();
+		// TODO: 后面改成从buf里读数据，现在是把vcpu写入buf.
+		__retrieve_shared_buf_to_vcpu(vcpu, share_buf_base_address);
 		/* And we're baaack! */
 	} while (fixup_guest_exit(vcpu, &exit_code));
 
