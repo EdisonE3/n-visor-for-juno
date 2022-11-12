@@ -636,10 +636,9 @@ int __hyp_text __kvm_vcpu_run_nvhe(struct kvm_vcpu *vcpu, void *gp_regs, void *s
 	__set_guest_arch_workaround_state(vcpu);
 
 	do {
-		/* Jump in the fire! */
-		asm volatile("mov x14,  %0" : : "r" (share_buf_base_address));
 		exit_code = __guest_enter_s_visor_fastpath(vcpu, host_ctxt, gp_regs);
-
+		// TODO: enter 和 exit 用的是同一套gp_regs吗?
+		__retrieve_shared_buf_to_vcpu(vcpu, gp_regs);
 		/* And we're baaack! */
 	} while (fixup_guest_exit(vcpu, &exit_code));
 

@@ -86,6 +86,7 @@ kvm_smc_req_t *get_smc_req_region(unsigned int core_id);
 void *get_gp_reg_region(unsigned int core_id);
 
 // el2
+unsigned int get_smp_processor_id(void);
 void *get_shared_buf_with_rmm(void);
 //-------------------shared memory-------------------end
 

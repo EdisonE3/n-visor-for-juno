@@ -106,6 +106,50 @@ alternative_else_nop_endif
 	sb
 ENDPROC(__guest_enter)
 
+ENTRY(__retrieve_shared_buf_to_vcpu)
+	// x0: vcpu
+	// x1: shared_register_pages[core_id]
+
+	add	x0, x0, #VCPU_CONTEXT
+
+	// Retrive guest regs x0-x30
+	// TODO：目前先测试一下从VCPU到shared buf，后面再反过来
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(0)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(0)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(2)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(2)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(4)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(4)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(6)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(6)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(8)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(8)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(10)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(10)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(12)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(12)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(14)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(14)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(16)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(16)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(18)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(18)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(20)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(20)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(22)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(22)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(24)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(24)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(26)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(26)]
+	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(28)]
+	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(28)]
+	ldr 	x3,   [x0, #CPU_XREG_OFFSET(30)]
+	str 	x3,   [x1, #CPU_XREG_OFFSET(30)]
+
+	ret
+ENDPROC(__retrieve_shared_buf_to_vcpu)
+
 /*
  * u64 __guest_enter_s_visor_fastpath(struct kvm_vcpu *vcpu,
  *		     struct kvm_cpu_context *host_ctxt, void *shared_page);
@@ -220,72 +264,10 @@ ENTRY(__guest_exit)
 	// Store the guest regs x2 and x3
 	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(2)]
 
-	// Restore the host regs
-	ldp	x2, x3, [sp], #16
-	/* 
-	get_host_ctxt	x2, x3
-	restore_share_base_address_register x2
-
 	// Retrieve the guest regs x0-x1 from the stack
 	ldp	x2, x3, [sp], #16	// x0, x1
-	stp	x0, x1, [sp, #-16]!	// return code, vcpu
-	bl 	get_shared_buf_with_rmm // change x0, x1, x2 | x0:shared buf
-	ldp     x2, x1,   [sp], #16     // return_code, vcpu
 
-	//----------------------------only for rmm---------------------------
-	// Store the guest regs x0-x1 and x4-x18 to shared memory
-	stp	x2, x3,   [x0, #CPU_XREG_OFFSET(0)]
-	stp	x4, x5,   [x0, #CPU_XREG_OFFSET(4)]
-	stp	x6, x7,   [x0, #CPU_XREG_OFFSET(6)]
-	stp	x8, x9,   [x0, #CPU_XREG_OFFSET(8)]
-	stp	x10, x11, [x0, #CPU_XREG_OFFSET(10)]
-	stp	x12, x13, [x0, #CPU_XREG_OFFSET(12)]
-	stp	x14, x15, [x0, #CPU_XREG_OFFSET(14)]
-	stp	x16, x17, [x0, #CPU_XREG_OFFSET(16)]
-	str	x18,      [x0, #CPU_XREG_OFFSET(18)]
-
-	// Store the guest regs x19-x29, lr to shared memory
-	save_callee_saved_regs x0
-
-	// Retrive guest regs x0-x30
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(0)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(0)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(2)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(2)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(4)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(4)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(6)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(6)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(8)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(8)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(10)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(10)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(12)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(12)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(14)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(14)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(16)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(16)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(18)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(18)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(20)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(20)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(22)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(22)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(24)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(24)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(26)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(26)]
-	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(28)]
-	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(28)]
-	ldr 	x3,   [x0, #CPU_XREG_OFFSET(30)]
-	str 	x3,   [x1, #CPU_XREG_OFFSET(30)]
-
-	mov x0, x2
-	*/
-	//----------------------------only for rmm---------------------------
-
-	// Store the guest regs x0-x1 and x4-x18 to shared memory
+	// Store the guest regs x0-x1 and x4-x18
 	stp	x2, x3,   [x1, #CPU_XREG_OFFSET(0)]
 	stp	x4, x5,   [x1, #CPU_XREG_OFFSET(4)]
 	stp	x6, x7,   [x1, #CPU_XREG_OFFSET(6)]
@@ -296,7 +278,7 @@ ENTRY(__guest_exit)
 	stp	x16, x17, [x1, #CPU_XREG_OFFSET(16)]
 	str	x18,      [x1, #CPU_XREG_OFFSET(18)]
 
-	// Store the guest regs x19-x29, lr to shared memory
+	// Store the guest regs x19-x29, lr
 	save_callee_saved_regs x1
 
 	get_host_ctxt	x2, x3
