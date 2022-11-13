@@ -87,7 +87,7 @@ void *get_gp_reg_region(unsigned int core_id);
 
 // el2
 unsigned int get_smp_processor_id(void);
-void *get_shared_buf_with_rmm(void);
+void *get_shared_buf_with_rmm(uint64_t * shared_buf);
 //-------------------shared memory-------------------end
 
 #define __KVM_HAVE_ARCH_INTC_INITIALIZED

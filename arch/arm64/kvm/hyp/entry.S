@@ -22,14 +22,6 @@
 	.text
 	.pushsection	.hyp.text, "ax"
 
-.macro save_share_base_address_register ctxt
-	str     x14, [\ctxt, #CPU_XREG_OFFSET(14)]
-.endm
-
-.macro restore_share_base_address_register ctxt
-	ldr		x14, [\ctxt, #CPU_XREG_OFFSET(14)]
-.endm
-
 .macro save_callee_saved_regs ctxt
 	stp	x19, x20, [\ctxt, #CPU_XREG_OFFSET(19)]
 	stp	x21, x22, [\ctxt, #CPU_XREG_OFFSET(21)]
@@ -160,9 +152,6 @@ ENTRY(__guest_enter_s_visor_fastpath)
 	// x2: shared_register_pages[core_id]
 	// x3-x17: clobbered by macros
 	// x18: guest context
-
-	// Store the host regs x18
-	save_share_base_address_register x1
 
 	// Store the host regs
 	save_callee_saved_regs x1

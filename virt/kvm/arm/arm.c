@@ -89,21 +89,11 @@ unsigned int __hyp_text get_smp_processor_id(void)
 }
 
 // 自动获取当前VM用于储存通用寄存器的shared region
-void* __hyp_text get_shared_buf_with_rmm(void)
+void* __hyp_text get_shared_buf_with_rmm(uint64_t * shared_buf)
 {
 	uint64_t core_id;
-	uint64_t stored_base;
-	uint64_t *ptr; 
-	void *shared_buf;
-
 	core_id = get_smp_processor_id();
-	
-	// 默认把el1:base address写在host:x14中
-	asm volatile("mov %0,  x14" : "=r" (stored_base));
-	ptr = (uint64_t *)stored_base; 
-
-	shared_buf = ptr + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
-
+	shared_buf = shared_buf + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
 	shared_buf = kern_hyp_va(shared_buf);
 	return shared_buf;
 }
