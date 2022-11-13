@@ -49,13 +49,6 @@ __asm__(".arch_extension	virt");
 __attribute__((aligned(PAGE_SIZE))) uint64_t shared_register_pages[S_VISOR_MAX_SUPPORTED_PHYSICAL_CORE_NUM * S_VISOR_MAX_SIZE_PER_CORE];
 
 //---------------------el1------------------------
-
-// 获取shared memory的起始地址
-inline void *get_shared_memory_base_address(unsigned int core_id)
-{
-	return shared_register_pages + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
-}
-
 // 根据传入的core id, 获取储存smc request的shared region
 inline kvm_smc_req_t *get_smc_req_region(unsigned int core_id)
 {
@@ -89,13 +82,15 @@ unsigned int __hyp_text get_smp_processor_id(void)
 }
 
 // 自动获取当前VM用于储存通用寄存器的shared region
-void* __hyp_text get_shared_buf_with_rmm(uint64_t * shared_buf)
+void* __hyp_text get_shared_buf_with_rmm(uint64_t * base_address)
 {
 	uint64_t core_id;
+	asm volatile("mov x14, %0\n\t" : : "r"(base_address));
 	core_id = get_smp_processor_id();
-	shared_buf = shared_buf + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
-	shared_buf = kern_hyp_va(shared_buf);
-	return shared_buf;
+	asm volatile("mov %0, x14\n\t" : "=r"(base_address));
+	base_address = base_address + core_id * S_VISOR_MAX_SIZE_PER_CORE;;
+	base_address = kern_hyp_va(base_address);
+	return (void*)base_address;
 }
 
 DEFINE_PER_CPU(kvm_host_data_t, kvm_host_data);
@@ -851,7 +846,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			void* gp_regs;
 			void* base_address;
 			gp_regs = get_gp_reg_region(smp_processor_id());
-			base_address = get_shared_memory_base_address(0);
+			base_address = get_gp_reg_region(0);
 
 			// go to el2
 			ret = kvm_call_hyp_ret(__kvm_vcpu_run_nvhe, vcpu, gp_regs, base_address);

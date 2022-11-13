@@ -81,7 +81,6 @@ void trap_s_visor_enter_guest(u32 sec_vm_id, u32 vcpu_id);
 
 //-------------------shared memory-------------------start
 // el1
-void *get_shared_memory_base_address(unsigned int core_id);
 kvm_smc_req_t *get_smc_req_region(unsigned int core_id);
 void *get_gp_reg_region(unsigned int core_id);
 
