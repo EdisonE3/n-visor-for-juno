@@ -941,11 +941,11 @@ void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
 	smc_req->boot.nr_vcpu = nr_vcpu;
 
 	local_irq_disable();
-	// asm volatile("smc 0x18\n\t");
-	kvm_info("boot_rmm_realm_vm: core_id: %u\n", core_id);
-	kvm_info("boot_rmm_realm_vm: smc_req: %llx\n", smc_req);
-	kvm_info("boot_rmm_realm_vm: sec_vm_id: %u\n", sec_vm_id);
-	kvm_info("boot_rmm_realm_vm: successfully\n");
+	asm volatile("smc 0x18\n\t");
+	// kvm_info("boot_rmm_realm_vm: core_id: %u\n", core_id);
+	// kvm_info("boot_rmm_realm_vm: smc_req: %llx\n", smc_req);
+	// kvm_info("boot_rmm_realm_vm: sec_vm_id: %u\n", sec_vm_id);
+	// kvm_info("boot_rmm_realm_vm: successfully\n");
 	local_irq_enable();
 }
 

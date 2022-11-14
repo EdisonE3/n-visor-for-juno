@@ -233,11 +233,11 @@ alternative_else_nop_endif
 	ldr	x18,      [x18, #CPU_XREG_OFFSET(18)]
 
 	// TODO: 暂时不用smc
-	// smc #0x1
+	smc #0x1
 	
 	// Do not touch any register after this!
-	eret
-	sb
+	// eret
+	// sb
 ENDPROC(__guest_enter_s_visor_fastpath)
 
 ENTRY(__guest_exit)

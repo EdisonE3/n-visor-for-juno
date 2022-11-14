@@ -217,8 +217,8 @@ static void destroy_s_visor_secure_vm(u32 sec_vm_id)
 	smc_req->sec_vm_id = sec_vm_id;
 	smc_req->req_type = REQ_KVM_TO_S_VISOR_SHUTDOWN;
 	local_irq_disable();
-	// asm volatile("smc 0x18\n\t");
-	kvm_info("REQ_KVM_TO_S_VISOR_SHUTDOWN: %d\n", smc_req->sec_vm_id);
+	asm volatile("smc 0x18\n\t");
+	// kvm_info("REQ_KVM_TO_S_VISOR_SHUTDOWN: %d\n", smc_req->sec_vm_id);
 	local_irq_enable();
 }
 
@@ -1757,7 +1757,7 @@ static inline void register_s_visor_shared_memory(void) {
 	
 	asm volatile("mov x1, %0\n"::"r"(virt_to_phys(shared_register_pages)): "x1");
 	local_irq_disable();
-	// asm volatile("smc #0x10\n");
+	asm volatile("smc #0x10\n");
 	kvm_info("Registered s_visor shared memory va: %llx, pa: %llx successfully\n", 
 	shared_register_pages, virt_to_phys(shared_register_pages));
 	local_irq_enable();
