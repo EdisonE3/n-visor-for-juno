@@ -103,9 +103,14 @@ ENTRY(__retrieve_shared_buf_to_vcpu)
 	// x1: shared_register_pages[core_id]
 
 	add	x0, x0, #VCPU_CONTEXT
+	
+	// 改成从shared buf 到 vcpu，交换一下它们的位置
+	mov x2, x0
+	mov x0, x1
+	mov x1, x2
 
 	// Retrive guest regs x0-x30
-	// TODO：目前先测试一下从VCPU到shared buf，后面再反过来
+	// x0: shared buf x1: vcpu
 	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(0)]
 	stp 	x3, x4,   [x1, #CPU_XREG_OFFSET(0)]
 	ldp 	x3, x4,   [x0, #CPU_XREG_OFFSET(2)]
