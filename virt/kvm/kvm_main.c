@@ -936,7 +936,8 @@ void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
 	// initialize information of smc_req
 	smc_req->sec_vm_id = sec_vm_id;
 	smc_req->req_type = REQ_KVM_TO_S_VISOR_BOOT;
-	uint64_t qemu_s1ptp = kvm_call_hyp_ret(__read_ttbr0_el2);
+	uint64_t qemu_s1ptp;		
+	asm volatile("mrs %0, ttbr0_el1\n\t" : "=r"(qemu_s1ptp));
 	smc_req->boot.qemu_s1ptp = qemu_s1ptp;
 	smc_req->boot.nr_vcpu = nr_vcpu;
 
