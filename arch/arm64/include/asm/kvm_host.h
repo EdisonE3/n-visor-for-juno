@@ -83,6 +83,7 @@ void trap_s_visor_enter_guest(u32 sec_vm_id, u32 vcpu_id);
 // el1
 kvm_smc_req_t *get_smc_req_region(unsigned int core_id);
 void *get_gp_reg_region(unsigned int core_id);
+unsigned int get_smp_processor_id_el1(void);
 
 // el2
 unsigned int get_smp_processor_id(void);

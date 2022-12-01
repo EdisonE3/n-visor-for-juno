@@ -930,7 +930,8 @@ void boot_rmm_realm_vm(u32 sec_vm_id, u64 nr_vcpu){
 	// request shared memory
 	unsigned int core_id;
 	kvm_smc_req_t *smc_req;
-	core_id = smp_processor_id();
+	// core_id = smp_processor_id();
+	core_id = get_smp_processor_id_el1();
 	smc_req = get_smc_req_region(core_id);
 
 	// initialize information of smc_req

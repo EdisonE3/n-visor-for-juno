@@ -66,6 +66,19 @@ inline void *get_gp_reg_region(unsigned int core_id)
 	return (void *)ptr;
 }
 
+unsigned int get_smp_processor_id_el1(void)
+{
+	unsigned int core_id;
+	asm volatile("mrs	x9, mpidr_el1\n\t"
+	"tst	x9,#0x1000000\n\t"
+	"lsl	x10,x9,#8\n\t"
+	"csel	x10,x10,x9,eq\n\t"
+	"ubfx	x9,x10,#8,#8\n\t"
+	"ubfx   x11,x10,#16,#8\n\t"
+	"add    %0,x9,x11,lsl #2" : "=r"(core_id));
+	return core_id;
+}
+
 //---------------------el2------------------------
 
 unsigned int __hyp_text get_smp_processor_id(void)
@@ -213,7 +226,7 @@ vm_fault_t kvm_arch_vcpu_fault(struct kvm_vcpu *vcpu, struct vm_fault *vmf)
 static void destroy_s_visor_secure_vm(u32 sec_vm_id)
 {
 	kvm_smc_req_t *smc_req;
-	smc_req = get_smc_req_region(smp_processor_id());
+	smc_req = get_smc_req_region(get_smp_processor_id_el1());
 	smc_req->sec_vm_id = sec_vm_id;
 	smc_req->req_type = REQ_KVM_TO_S_VISOR_SHUTDOWN;
 	local_irq_disable();
@@ -845,7 +858,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
 			// get shared memory
 			void* gp_regs;
 			void* base_address;
-			gp_regs = get_gp_reg_region(smp_processor_id());
+			gp_regs = get_gp_reg_region(get_smp_processor_id_el1());
 			base_address = get_gp_reg_region(0);
 
 			// go to el2
