@@ -211,21 +211,25 @@ static void __hyp_text __deactivate_vm(struct kvm_vcpu *vcpu)
 	write_sysreg(0, vttbr_el2);
 }
 
-/* Save VGICv3 state on non-VHE systems */
+/* Save VGICv3 or VGICv2 state on non-VHE systems */
 static void __hyp_text __hyp_vgic_save_state(struct kvm_vcpu *vcpu)
 {
 	if (static_branch_unlikely(&kvm_vgic_global_state.gicv3_cpuif)) {
 		__vgic_v3_save_state(vcpu);
 		__vgic_v3_deactivate_traps(vcpu);
+	} else {
+		__vgic_v2_save_state(vcpu);
 	}
 }
 
-/* Restore VGICv3 state on non_VEH systems */
+/* Restore VGICv3 or VGICv2 state on non_VEH systems */
 static void __hyp_text __hyp_vgic_restore_state(struct kvm_vcpu *vcpu)
 {
 	if (static_branch_unlikely(&kvm_vgic_global_state.gicv3_cpuif)) {
 		__vgic_v3_activate_traps(vcpu);
 		__vgic_v3_restore_state(vcpu);
+	} else {
+		__vgic_v2_restore_state(vcpu);
 	}
 }
 
